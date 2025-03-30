@@ -8,7 +8,6 @@ import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
 import streamlit.elements.image as st_image
-from streamlit.elements.utils import _image_to_url  # add this to the top of the file if needed
 from PIL import Image
 
 _RELEASE = True  # on packaging, pass this to True
@@ -53,6 +52,13 @@ def _resize_img(img: Image, new_height: int = 700, new_width: int = 700) -> Imag
     img = img.resize((int(img.width * w_ratio), int(img.height * h_ratio)))
     return img
 
+def _pil_image_to_data_url(img: Image.Image, format: str = "PNG") -> str:
+    """Convert a PIL image to a base64-encoded data URL."""
+    buffered = io.BytesIO()
+    img.save(buffered, format=format)
+    img_bytes = buffered.getvalue()
+    base64_str = base64.b64encode(img_bytes).decode("utf-8")
+    return f"data:image/{format.lower()};base64,{base64_str}"
 
 def st_canvas(
     fill_color: str = "#eee",
@@ -123,13 +129,7 @@ def st_canvas(
     if background_image:
         background_image = _resize_img(background_image, height, width)
         # Reduce network traffic and cache when switch another configure, use streamlit in-mem filemanager to convert image to URL
-        background_image_url = _image_to_url(
-            background_image, 
-            width=width, 
-            clamp=False, 
-            channels="RGB", 
-            output_format="auto"
-        )
+        background_image_url = _pil_image_to_data_url(background_image)
         background_color = ""
 
     # Clean initial drawing, override its background color
